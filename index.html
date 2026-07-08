@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus — Instellen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <span class="brand">Focus</span>
+    <div class="pulse-wrap" id="pulseWrap">
+      <svg viewBox="0 0 200 32" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="pg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#7c93e8"/>
+            <stop offset="35%" stop-color="#e8807a"/>
+            <stop offset="65%" stop-color="#e8c96a"/>
+            <stop offset="100%" stop-color="#6bcf9b"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,16 L60,16 L70,4 L80,28 L90,16 L200,16 L260,16 L270,4 L280,28 L290,16 L400,16"
+          fill="none" stroke="url(#pg)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </header>
+
+  <div class="row-list" id="phases"></div>
+
+  <div class="actions">
+    <button class="btn" id="addBtn">Add phase</button>
+    <button class="btn" id="resetBtn">Reset</button>
+  </div>
+
+  <button class="btn-primary" id="startBtn">Start</button>
+
+  <div class="summary">
+    <span>Total time <strong id="totalMin">60 min</strong></span>
+    <span>End time <strong id="endTime">--:--</strong></span>
+  </div>
+
+  <div class="section-title">Templates</div>
+  <div id="templates"></div>
+  <button class="save-template" id="saveTplBtn">Save current draft as a template</button>
+</div>
+
+<script src="shared.js"></script>
+<script src="setup.js"></script>
+</body>
+</html>

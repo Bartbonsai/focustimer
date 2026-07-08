@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus — Sessie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <a class="brand" href="index.html">← Focus</a>
+    <div class="pulse-wrap" id="pulseWrap">
+      <svg viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path id="pulsePath" d="M0,16 L60,16 L70,4 L80,28 L90,16 L200,16 L260,16 L270,4 L280,28 L290,16 L400,16"
+          fill="none" stroke="#e8807a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </header>
+
+  <div class="empty-note" id="emptyNote" style="display:none">
+    Geen eigen sessie gevonden — dit is de standaardsessie. <a href="index.html">Ga naar instellen</a> om je eigen tijden te kiezen.
+  </div>
+
+  <div class="row-list" id="stages"></div>
+
+  <button class="btn-primary" id="toggleBtn">Stop</button>
+
+  <div class="summary">
+    <span>Resterend <strong id="totalLeft">00:00</strong></span>
+    <span>Eindtijd <strong id="endTime">--:--</strong></span>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="timer.js"></script>
+</body>
+</html>
