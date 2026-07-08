@@ -3,17 +3,186 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Focus — Instellen</title>
+<title>Focus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --surface-2: #131316;
+    --border: #1e1e22;
+    --border-active: #2c2c31;
+    --text: #ededef;
+    --text-dim: #6b6b70;
+    --text-faint: #3a3a3e;
+
+    --c-startup: #7c93e8;
+    --c-startup-bg: #171c30;
+    --c-focus: #e8807a;
+    --c-focus-bg: #2b1917;
+    --c-finish: #e8c96a;
+    --c-finish-bg: #2b2515;
+    --c-off: #6bcf9b;
+    --c-off-bg: #11241b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+  }
+
+  body {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 28px 16px 48px;
+  }
+
+  .app { width: 100%; max-width: 460px; }
+  .view[hidden] { display: none; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .brand {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    cursor: default;
+    font-family: inherit;
+  }
+
+  .pulse-wrap { width: 130px; height: 30px; overflow: hidden; }
+  .pulse-wrap svg { width: 200%; height: 100%; display: block; animation: pulse-scroll 3.4s linear infinite; }
+  .pulse-wrap.urgent svg { animation-duration: 1.1s; }
+  @keyframes pulse-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .pulse-wrap svg { animation: none; } }
+
+  .row-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+
+  .phase { display: grid; grid-template-columns: 1fr 84px; gap: 10px; align-items: center; }
+
+  .phase-label {
+    background: var(--stage-bg); border: 1px solid var(--border); border-left: 3px solid var(--stage-color);
+    border-radius: 10px; padding: 14px 16px; font-weight: 600; font-size: 15px; color: var(--stage-color);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .phase-label select {
+    background: transparent; border: none; color: var(--stage-color);
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px;
+    cursor: pointer; appearance: none; -webkit-appearance: none; width: 100%;
+  }
+  .phase-label select:focus-visible { outline: 2px solid var(--stage-color); outline-offset: 2px; border-radius: 4px; }
+  .phase-label select option { background: #111; color: #eee; }
+
+  .remove-btn { background: transparent; border: none; color: var(--stage-color); opacity: 0.55; font-size: 16px; cursor: pointer; line-height: 1; padding: 2px 4px; }
+  .remove-btn:hover { opacity: 1; }
+
+  .minutes-field {
+    background: var(--surface); border: 1px solid var(--stage-color); border-radius: 10px;
+    display: flex; align-items: center; padding: 0 10px; height: 52px;
+  }
+  .minutes-field input {
+    width: 100%; background: transparent; border: none; color: var(--text);
+    font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 500; text-align: left;
+  }
+  .minutes-field input:focus { outline: none; }
+  .minutes-field input::-webkit-outer-spin-button, .minutes-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .minutes-field input[type=number] { -moz-appearance: textfield; }
+
+  .stage {
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 14px 14px 16px; border-left: 3px solid transparent;
+    transition: border-color 0.25s ease, background 0.25s ease;
+  }
+  .stage.done { opacity: 0.42; }
+  .stage.done .label { text-decoration: line-through; }
+  .stage.active { border-left-color: var(--stage-color); background: var(--stage-bg); border-color: var(--border-active); }
+
+  .phase[data-type="startup"], .stage[data-type="startup"] { --stage-color: var(--c-startup); --stage-bg: var(--c-startup-bg); }
+  .phase[data-type="focus"],   .stage[data-type="focus"]   { --stage-color: var(--c-focus);   --stage-bg: var(--c-focus-bg); }
+  .phase[data-type="finish"],  .stage[data-type="finish"]  { --stage-color: var(--c-finish);  --stage-bg: var(--c-finish-bg); }
+  .phase[data-type="off"],     .stage[data-type="off"]     { --stage-color: var(--c-off);     --stage-bg: var(--c-off-bg); }
+
+  .label { font-weight: 500; font-size: 15px; color: var(--stage-color, var(--text-dim)); }
+  .stage.done .label { color: var(--text-dim); }
+  .stage:not(.active):not(.done) .label { color: var(--text-dim); }
+
+  .controls { display: flex; align-items: center; gap: 10px; }
+  .step-btn {
+    width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-active);
+    background: transparent; color: var(--text-dim); font-size: 15px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background 0.15s ease, color 0.15s ease;
+  }
+  .step-btn:hover { background: var(--surface-2); color: var(--text); }
+  .step-btn:focus-visible { outline: 2px solid var(--stage-color, #7c93e8); outline-offset: 2px; }
+  .step-btn:disabled { opacity: 0.25; cursor: default; }
+
+  .time { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 500; width: 58px; text-align: center; color: var(--text); }
+  .stage.done .time { color: var(--text-dim); }
+  .check { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--c-off); }
+
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .btn {
+    padding: 13px; border-radius: 10px; border: 1px solid var(--border-active);
+    background: var(--surface-2); color: var(--text); font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.15s ease;
+  }
+  .btn:hover { background: #1a1a1e; }
+  .btn:focus-visible { outline: 2px solid var(--text-dim); outline-offset: 2px; }
+
+  .btn-primary {
+    width: 100%; padding: 17px; border-radius: 10px; border: none;
+    background: var(--text); color: #000; font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; margin-bottom: 22px;
+  }
+  .btn-primary:hover { background: #cfcfd2; }
+  .btn-primary:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; }
+
+  .summary { display: flex; justify-content: flex-end; gap: 20px; font-size: 12px; color: var(--text-dim); margin-bottom: 34px; }
+  .summary strong { font-family: 'JetBrains Mono', monospace; color: var(--text); font-weight: 500; }
+
+  .section-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; }
+  .template { display: flex; height: 34px; border-radius: 8px; overflow: hidden; margin-bottom: 8px; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.15s ease, transform 0.1s ease; }
+  .template:hover { border-color: var(--border-active); }
+  .template:active { transform: scale(0.995); }
+  .template-seg { display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #000; white-space: nowrap; overflow: hidden; }
+  .template-seg[data-type="startup"] { background: var(--c-startup); }
+  .template-seg[data-type="focus"]   { background: var(--c-focus); }
+  .template-seg[data-type="finish"]  { background: var(--c-finish); }
+  .template-seg[data-type="off"]     { background: var(--c-off); }
+
+  .save-template {
+    width: 100%; background: transparent; border: none; color: var(--text-dim);
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px; text-align: center;
+    padding: 14px 0 0; cursor: pointer; text-decoration: underline;
+    text-decoration-color: var(--text-faint); text-underline-offset: 3px;
+  }
+  .save-template:hover { color: var(--text); }
+</style>
 </head>
 <body>
 
-<div class="app">
+<div id="setupView" class="app view">
   <header>
     <span class="brand">Focus</span>
-    <div class="pulse-wrap" id="pulseWrap">
+    <div class="pulse-wrap">
       <svg viewBox="0 0 200 32" preserveAspectRatio="none">
         <defs>
           <linearGradient id="pg" x1="0" y1="0" x2="1" y2="0">
@@ -48,7 +217,358 @@
   <button class="save-template" id="saveTplBtn">Save current draft as a template</button>
 </div>
 
-<script src="shared.js"></script>
-<script src="setup.js"></script>
+<div id="timerView" class="app view" hidden>
+  <header>
+    <span class="brand">Focus</span>
+    <div class="pulse-wrap" id="pulseWrap">
+      <svg viewBox="0 0 200 32" preserveAspectRatio="none">
+        <path id="pulsePath" d="M0,16 L60,16 L70,4 L80,28 L90,16 L200,16 L260,16 L270,4 L280,28 L290,16 L400,16"
+          fill="none" stroke="#e8807a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </header>
+
+  <div class="row-list" id="stages"></div>
+
+  <button class="btn-primary" id="stopBtn">Stop</button>
+
+  <div class="summary">
+    <span>Resterend <strong id="totalLeft">00:00</strong></span>
+    <span>Eindtijd <strong id="timerEndTime">--:--</strong></span>
+  </div>
+</div>
+
+<script>
+(function () {
+  const LABELS = { startup: 'Start up', focus: 'Focus on', finish: 'Finish up', off: 'Focus off' };
+  const TYPES = ['startup', 'focus', 'finish', 'off'];
+
+  const DEFAULT_PHASES = [
+    { type: 'startup', minutes: 5 },
+    { type: 'focus',   minutes: 40 },
+    { type: 'finish',  minutes: 5 },
+    { type: 'off',     minutes: 10 }
+  ];
+
+  const TEMPLATES = [
+    [ {type:'startup',minutes:5}, {type:'focus',minutes:40}, {type:'finish',minutes:5}, {type:'off',minutes:10} ],
+    [ {type:'startup',minutes:5}, {type:'focus',minutes:20}, {type:'off',minutes:5}, {type:'focus',minutes:20}, {type:'finish',minutes:5}, {type:'off',minutes:5} ],
+    [ {type:'startup',minutes:5}, {type:'focus',minutes:60}, {type:'finish',minutes:10}, {type:'off',minutes:15} ],
+    [ {type:'startup',minutes:5}, {type:'focus',minutes:30}, {type:'off',minutes:5}, {type:'focus',minutes:30}, {type:'finish',minutes:5}, {type:'off',minutes:15} ]
+  ];
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.round(sec));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function endTimeString(totalSeconds) {
+    const end = new Date(Date.now() + totalSeconds * 1000);
+    return String(end.getHours()).padStart(2, '0') + ':' + String(end.getMinutes()).padStart(2, '0');
+  }
+
+  // ---- Geluid ----
+  // De AudioContext wordt uitsluitend aangemaakt binnen de klik-handler van
+  // de Start-knop hieronder: dat is een echte gebruikersinteractie, dus de
+  // browser staat geluid toe. Omdat er geen paginanavigatie meer plaatsvindt,
+  // blijft die toestemming geldig voor de rest van de sessie.
+  let audioCtx = null;
+
+  function playChime(kind) {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const base = 110;
+    const partials = [
+      { ratio: 1.00, amp: 1.00, decay: 2.2 },
+      { ratio: 2.01, amp: 0.50, decay: 1.7 },
+      { ratio: 2.76, amp: 0.28, decay: 1.4 },
+      { ratio: 3.41, amp: 0.14, decay: 1.1 },
+      { ratio: 4.24, amp: 0.07, decay: 0.85 }
+    ];
+    const masterGain = kind === 'done' ? 0.24 : 0.18;
+    const start = audioCtx.currentTime;
+    const durationScale = kind === 'done' ? 1.6 : 1.0;
+    const attack = 0.09;
+
+    partials.forEach(p => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const decay = p.decay * durationScale;
+      osc.type = 'sine';
+      osc.frequency.value = base * p.ratio;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(masterGain * p.amp, start + attack);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + attack + decay);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + attack + decay + 0.05);
+    });
+  }
+
+  // ---- Instelscherm ----
+  let phases = DEFAULT_PHASES.map(p => ({ ...p }));
+  let templates = TEMPLATES.map(t => t.map(p => ({ ...p })));
+
+  const setupView = document.getElementById('setupView');
+  const timerView = document.getElementById('timerView');
+  const phasesEl = document.getElementById('phases');
+  const templatesEl = document.getElementById('templates');
+  const totalMinEl = document.getElementById('totalMin');
+  const endTimeEl = document.getElementById('endTime');
+
+  function totalMinutes(list) {
+    return list.reduce((sum, p) => sum + (p.minutes || 0), 0);
+  }
+
+  function renderPhases() {
+    phasesEl.innerHTML = '';
+    phases.forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'phase';
+      row.dataset.type = p.type;
+
+      const labelBox = document.createElement('div');
+      labelBox.className = 'phase-label';
+
+      const select = document.createElement('select');
+      TYPES.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = LABELS[t];
+        if (t === p.type) opt.selected = true;
+        select.appendChild(opt);
+      });
+      select.onchange = (e) => { phases[i].type = e.target.value; renderPhases(); };
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.setAttribute('aria-label', 'Fase verwijderen');
+      removeBtn.onclick = () => { phases.splice(i, 1); renderPhases(); };
+
+      labelBox.appendChild(select);
+      if (phases.length > 1) labelBox.appendChild(removeBtn);
+
+      const field = document.createElement('div');
+      field.className = 'minutes-field';
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.value = p.minutes;
+      input.setAttribute('aria-label', LABELS[p.type] + ' in minuten');
+      input.oninput = (e) => {
+        phases[i].minutes = Math.max(0, parseInt(e.target.value || '0', 10));
+        updateSetupSummary();
+      };
+
+      field.appendChild(input);
+      row.appendChild(labelBox);
+      row.appendChild(field);
+      phasesEl.appendChild(row);
+    });
+    updateSetupSummary();
+  }
+
+  function updateSetupSummary() {
+    const total = totalMinutes(phases);
+    totalMinEl.textContent = total + ' min';
+    endTimeEl.textContent = endTimeString(total * 60);
+  }
+
+  function renderTemplates() {
+    templatesEl.innerHTML = '';
+    templates.forEach((tpl) => {
+      const row = document.createElement('div');
+      row.className = 'template';
+      tpl.forEach(seg => {
+        const s = document.createElement('div');
+        s.className = 'template-seg';
+        s.dataset.type = seg.type;
+        s.style.flex = String(Math.max(seg.minutes, 1));
+        s.textContent = seg.minutes;
+        row.appendChild(s);
+      });
+      row.title = tpl.map(s => LABELS[s.type] + ' ' + s.minutes + 'm').join(' \u2192 ');
+      row.onclick = () => { phases = tpl.map(s => ({ ...s })); renderPhases(); };
+      templatesEl.appendChild(row);
+    });
+  }
+
+  document.getElementById('addBtn').onclick = () => {
+    phases.push({ type: 'focus', minutes: 25 });
+    renderPhases();
+  };
+
+  document.getElementById('resetBtn').onclick = () => {
+    phases = DEFAULT_PHASES.map(p => ({ ...p }));
+    renderPhases();
+  };
+
+  document.getElementById('saveTplBtn').onclick = () => {
+    templates.push(phases.map(p => ({ ...p })));
+    renderTemplates();
+  };
+
+  // ---- Timerscherm ----
+  let stages = [];
+  let tickHandle = null;
+
+  const stagesEl = document.getElementById('stages');
+  const totalLeftEl = document.getElementById('totalLeft');
+  const timerEndTimeEl = document.getElementById('timerEndTime');
+  const stopBtn = document.getElementById('stopBtn');
+  const pulseWrap = document.getElementById('pulseWrap');
+
+  function activeIndex() {
+    return stages.findIndex(s => !s.done);
+  }
+
+  function totalRemaining() {
+    return stages.reduce((sum, s) => sum + (s.done ? 0 : s.remaining), 0);
+  }
+
+  function renderTimer() {
+    stagesEl.innerHTML = '';
+    const idx = activeIndex();
+
+    stages.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'stage' + (s.done ? ' done' : '') + (i === idx ? ' active' : '');
+      row.dataset.type = s.type;
+
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = LABELS[s.type];
+
+      const controls = document.createElement('div');
+      controls.className = 'controls';
+
+      if (s.done) {
+        const check = document.createElement('span');
+        check.className = 'check';
+        check.innerHTML = '&#10003;';
+        controls.appendChild(check);
+      } else {
+        const minus = document.createElement('button');
+        minus.className = 'step-btn';
+        minus.textContent = '\u2212';
+        minus.setAttribute('aria-label', 'Minuut eraf');
+        minus.disabled = s.remaining <= 0;
+        minus.onclick = () => adjust(i, -60);
+
+        const time = document.createElement('span');
+        time.className = 'time';
+        time.textContent = fmt(s.remaining);
+
+        const plus = document.createElement('button');
+        plus.className = 'step-btn';
+        plus.textContent = '+';
+        plus.setAttribute('aria-label', 'Minuut erbij');
+        plus.onclick = () => adjust(i, 60);
+
+        controls.appendChild(minus);
+        controls.appendChild(time);
+        controls.appendChild(plus);
+      }
+
+      row.appendChild(label);
+      row.appendChild(controls);
+      stagesEl.appendChild(row);
+    });
+
+    totalLeftEl.textContent = fmt(totalRemaining());
+    timerEndTimeEl.textContent = endTimeString(totalRemaining());
+
+    const cur = stages[idx];
+    const urgent = cur && cur.duration > 0 && (cur.remaining / cur.duration) < 0.2;
+    pulseWrap.classList.toggle('urgent', !!urgent);
+
+    const activeRow = document.querySelector('.stage.active');
+    const path = document.getElementById('pulsePath');
+    if (activeRow && path) {
+      const colorVar = getComputedStyle(activeRow).getPropertyValue('--stage-color').trim();
+      if (colorVar) path.setAttribute('stroke', colorVar);
+    }
+
+    if (idx === -1) {
+      stopInterval();
+      stopBtn.textContent = 'Nieuwe sessie';
+    }
+  }
+
+  function adjust(i, deltaSec) {
+    const s = stages[i];
+    s.remaining = Math.max(0, s.remaining + deltaSec);
+    s.duration = Math.max(s.duration, s.remaining);
+    renderTimer();
+  }
+
+  function tick() {
+    const idx = activeIndex();
+    if (idx === -1) { stopInterval(); return; }
+    const s = stages[idx];
+    s.remaining -= 1;
+    if (s.remaining <= 0) {
+      s.remaining = 0;
+      s.done = true;
+      const nextIdx = activeIndex();
+      playChime(nextIdx === -1 ? 'done' : 'next');
+    }
+    renderTimer();
+  }
+
+  function startInterval() {
+    if (tickHandle) clearInterval(tickHandle);
+    tickHandle = setInterval(tick, 1000);
+  }
+
+  function stopInterval() {
+    if (tickHandle) clearInterval(tickHandle);
+    tickHandle = null;
+  }
+
+  function showTimerView() {
+    stages = phases.map(p => ({
+      type: p.type,
+      duration: p.minutes * 60,
+      remaining: p.minutes * 60,
+      done: false
+    }));
+    stopBtn.textContent = 'Stop';
+    setupView.hidden = true;
+    timerView.hidden = false;
+    renderTimer();
+    startInterval();
+  }
+
+  function showSetupView() {
+    stopInterval();
+    timerView.hidden = true;
+    setupView.hidden = false;
+    renderPhases();
+  }
+
+  document.getElementById('startBtn').onclick = () => {
+    // Wordt aangemaakt binnen deze klik-handler: dit is een echte
+    // gebruikersinteractie, dus geluid wordt vanaf hier toegestaan.
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    showTimerView();
+  };
+
+  stopBtn.onclick = showSetupView;
+
+  renderPhases();
+  renderTemplates();
+})();
+</script>
+
 </body>
 </html>
