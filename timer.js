@@ -13,6 +13,17 @@
   let running = true;
   let tickHandle = null;
 
+  // Geluid mag pas spelen na een gebruikersinteractie (browserbeleid).
+  // We 'ontgrendelen' de audiocontext bij de eerste klik of toetsaanslag
+  // op deze pagina, zodat de eerste faseovergang al hoorbaar is.
+  const unlockOnce = () => {
+    focusUnlockAudio();
+    window.removeEventListener('pointerdown', unlockOnce);
+    window.removeEventListener('keydown', unlockOnce);
+  };
+  window.addEventListener('pointerdown', unlockOnce);
+  window.addEventListener('keydown', unlockOnce);
+
   const stagesEl = document.getElementById('stages');
   const totalLeftEl = document.getElementById('totalLeft');
   const endTimeEl = document.getElementById('endTime');
@@ -97,8 +108,7 @@
 
     if (idx === -1) {
       stopTimer();
-      toggleBtn.textContent = 'Klaar';
-      toggleBtn.disabled = true;
+      toggleBtn.textContent = 'Nieuwe sessie';
     }
   }
 
@@ -117,27 +127,28 @@
     if (s.remaining <= 0) {
       s.remaining = 0;
       s.done = true;
+      const nextIdx = activeIndex();
+      focusPlayChime(nextIdx === -1 ? 'done' : 'next');
     }
     render();
   }
 
   function startTimer() {
     running = true;
-    toggleBtn.textContent = 'Stop';
-    toggleBtn.classList.remove('running');
     if (tickHandle) clearInterval(tickHandle);
     tickHandle = setInterval(tick, 1000);
   }
 
   function stopTimer() {
     running = false;
-    toggleBtn.textContent = 'Start';
-    toggleBtn.classList.add('running');
     if (tickHandle) clearInterval(tickHandle);
     tickHandle = null;
   }
 
-  toggleBtn.onclick = () => (running ? stopTimer() : startTimer());
+  toggleBtn.onclick = () => {
+    stopTimer();
+    window.location.href = 'index.html';
+  };
 
   render();
   startTimer();
